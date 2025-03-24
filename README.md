@@ -133,15 +133,6 @@ For best results:
 4. Click "Predict True Color" to get the calibrated RGB values
 5. The predicted color will be displayed as a swatch along with its RGB values
 
-## Future Development
-
-Planned enhancements include:
-- Improved YOLOv8 training for extreme lighting conditions and angles
-- Mobile application development
-- Real-time video processing capabilities
-- Integration with color catalogs (Pantone, RAL, etc.)
-- Expanded color gamut support beyond sRGB
-
 ## Contributors
 
 - Zepeng Hu

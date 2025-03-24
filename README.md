@@ -16,17 +16,18 @@ The system consists of:
 ## Repository Structure
 
 ```
-├── app.py                  # Web application for color prediction
-├── eval.py                 # Evaluation metrics for color prediction models
-├── main.py                 # Entry point for classical ML models
-├── nn_tree_ensemble.py     # Neural network and tree-based ensemble model
-├── utils.py                # Utility functions for data processing and model handling
-├── data/                   # Dataset directory
-│   ├── train.csv           # Training data
-│   ├── val.csv             # Validation data
-│   └── test.csv            # Test data
-├── static/                 # Static files for web application
-└── templates/              # HTML templates for web application
+├── app.py                                              # Web application for color prediction
+├── eval.py                                             # Evaluation metrics for color prediction models
+├── main.py                                             # Entry point for classical ML models
+├── nn_tree_ensemble.py                                 # Neural network and tree-based ensemble model
+├── Color_Detection_Final_Model_Gemini_English.ipynb    # Autoencoder model
+├── utils.py                                            # Utility functions for data processing and model handling
+├── data/                                               # Dataset directory
+│   ├── train.csv                                       # Training data
+│   ├── val.csv                                         # Validation data
+│   └── test.csv                                        # Test data
+├── static/                                             # Static files for web application
+└── templates/                                          # HTML templates for web application
 ```
 
 ## Installation

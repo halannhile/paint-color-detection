@@ -12,6 +12,9 @@ The system consists of:
 3. Multiple prediction models to calculate true RGB values from observed colors
 4. A web application for easy use
 
+## Project Report 
+
+View our detailed project report [here](https://github.com/halannhile/paint-color-detection/blob/master/cosi149b_project1_report.pdf).
 
 ## Repository Structure
 

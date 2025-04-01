@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Prediction Tool</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .color-box {
+            width: 150px;
+            height: 150px;
+            border: 1px solid #ddd;
+            margin: 10px;
+            display: inline-block;
+        }
+        .detection-result {
+            max-width: 100%;
+            margin-top: 20px;
+        }
+        .rgb-display {
+            font-family: monospace;
+        }
+        .metrics-table {
+            font-size: 0.9em;
+        }
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 2s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .color-samples {
+            display: flex;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        .color-sample {
+            margin: 10px;
+            text-align: center;
+        }
+        .sample-box {
+            width: 80px;
+            height: 80px;
+            border: 1px solid #ddd;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">Color Prediction Tool</h1>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Upload Image</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="upload-form">
+                            <div class="mb-3">
+                                <label for="image-upload" class="form-label">Select an image with paint color and calibration tool:</label>
+                                <input class="form-control" type="file" id="image-upload" accept=".jpg,.jpeg,.png">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Upload & Extract Colors</button>
+                        </form>
+                        
+                        <div id="loader" class="loader"></div>
+                        
+                        <div id="extraction-result" class="mt-4" style="display: none;">
+                            <h5>Extracted Colors:</h5>
+                            <div id="color-samples" class="color-samples"></div>
+                            
+                            <div class="row mt-3">
+                                <div class="col-md-12 text-center">
+                                    <h6>Detection Result</h6>
+                                    <img id="detection-result" class="img-fluid" src="" alt="Detection Result">
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-3">
+                                <div class="col-md-12 text-center">
+                                    <h6>Detected Objects</h6>
+                                    <img id="objects-result" class="img-fluid" src="" alt="Detected Objects">
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-3">
+                                <div class="col-md-12 text-center">
+                                    <h6>Extracted Colors</h6>
+                                    <img id="colors-result" class="img-fluid" src="" alt="Extracted Colors">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Color Prediction</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="model-select" class="form-label">Select Model:</label>
+                            <select class="form-select" id="model-select">
+                                <option value="neural_network">Neural Network Ensemble</option>
+                                <option value="randomforest">Random Forest</option>
+                                <option value="linear">Linear Model</option>
+                                <option value="svm">SVM</option>
+                                <option value="xgboost">XGBoost</option>
+                                <option value="lightgbm">LightGBM</option>
+                                <option value="ensemble">Ensemble (AdaBoost)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">True RGB Values (optional):</label>
+                            <div class="input-group mb-2">
+                                <span class="input-group-text">R</span>
+                                <input type="number" class="form-control" id="true-r" min="0" max="255" placeholder="0-255">
+                                <span class="input-group-text">G</span>
+                                <input type="number" class="form-control" id="true-g" min="0" max="255" placeholder="0-255">
+                                <span class="input-group-text">B</span>
+                                <input type="number" class="form-control" id="true-b" min="0" max="255" placeholder="0-255">
+                            </div>
+                        </div>
+                        
+                        <button id="predict-btn" class="btn btn-success" disabled>Predict True Color</button>
+                        
+                        <div id="prediction-result" class="mt-4" style="display: none;">
+                            <div class="row">
+                                <div class="col-md-6 text-center">
+                                    <h6>Predicted Color</h6>
+                                    <div id="predicted-color-box" class="color-box mx-auto"></div>
+                                    <p id="predicted-rgb" class="rgb-display"></p>
+                                </div>
+                                <div class="col-md-6 text-center" id="true-color-section" style="display: none;">
+                                    <h6>True Color</h6>
+                                    <div id="true-color-box" class="color-box mx-auto"></div>
+                                    <p id="true-rgb" class="rgb-display"></p>
+                                </div>
+                            </div>
+                            
+                            <div id="metrics-section" class="mt-4" style="display: none;">
+                                <h6>Metrics:</h6>
+                                <table class="table table-sm metrics-table">
+                                    <tbody>
+                                        <tr>
+                                            <td>R² Score:</td>
+                                            <td id="r2-score">-</td>
+                                        </tr>
+                                        <tr>
+                                            <td>RMSE:</td>
+                                            <td id="rmse">-</td>
+                                        </tr>
+                                        <tr>
+                                            <td>MAPE:</td>
+                                            <td id="mape">-</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Mean ΔE:</td>
+                                            <td id="mean-delta-e">-</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Median ΔE:</td>
+                                            <td id="median-delta-e">-</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // global variable to store extracted RGB values
+        let extractedRgbList = null;
+        
+        document.getElementById('upload-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const fileInput = document.getElementById('image-upload');
+            if (!fileInput.files.length) {
+                alert('Please select an image file');
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            // show loader
+            document.getElementById('loader').style.display = 'block';
+            document.getElementById('extraction-result').style.display = 'none';
+            document.getElementById('predict-btn').disabled = true;
+            
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                // hide loader
+                document.getElementById('loader').style.display = 'none';
+                
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    return;
+                }
+                
+                // store extracted RGB values
+                extractedRgbList = data.rgb_list;
+                
+                // show extraction result
+                document.getElementById('extraction-result').style.display = 'block';
+                document.getElementById('predict-btn').disabled = false;
+                
+                // display all visualization images
+                document.getElementById('detection-result').src = '/static/' + data.result_image;
+                document.getElementById('objects-result').src = '/static/' + data.objects_image;
+                document.getElementById('colors-result').src = '/static/' + data.colors_image;
+                
+                // display color samples
+                const colorSamples = document.getElementById('color-samples');
+                colorSamples.innerHTML = '';
+            })
+            .catch(error => {
+                document.getElementById('loader').style.display = 'none';
+                alert('Error: ' + error);
+            });
+        });
+        
+        document.getElementById('predict-btn').addEventListener('click', function() {
+            if (!extractedRgbList) {
+                alert('Please upload and extract colors first');
+                return;
+            }
+            
+            // show loader
+            document.getElementById('loader').style.display = 'block';
+            document.getElementById('prediction-result').style.display = 'none';
+            
+            // get selected model
+            const modelName = document.getElementById('model-select').value;
+            
+            // get true RGB values if provided
+            const trueR = parseInt(document.getElementById('true-r').value) || 0;
+            const trueG = parseInt(document.getElementById('true-g').value) || 0;
+            const trueB = parseInt(document.getElementById('true-b').value) || 0;
+            const trueRgb = [trueR, trueG, trueB];
+            
+            // send prediction request
+            fetch('/predict', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    rgb_list: extractedRgbList,
+                    model: modelName,
+                    true_rgb: trueRgb
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // hide loader
+                document.getElementById('loader').style.display = 'none';
+                
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    return;
+                }
+                
+                // show prediction result
+                document.getElementById('prediction-result').style.display = 'block';
+                
+                // update predicted color
+                const predRgb = data.predicted_rgb;
+                document.getElementById('predicted-color-box').style.backgroundColor = 
+                    `rgb(${Math.round(predRgb[0])}, ${Math.round(predRgb[1])}, ${Math.round(predRgb[2])})`;
+                document.getElementById('predicted-rgb').textContent = 
+                    `R: ${Math.round(predRgb[0])}, G: ${Math.round(predRgb[1])}, B: ${Math.round(predRgb[2])}`;
+                
+                // update true color if provided
+                if (trueR > 0 || trueG > 0 || trueB > 0) {
+                    document.getElementById('true-color-section').style.display = 'block';
+                    document.getElementById('true-color-box').style.backgroundColor = 
+                        `rgb(${trueR}, ${trueG}, ${trueB})`;
+                    document.getElementById('true-rgb').textContent = 
+                        `R: ${trueR}, G: ${trueG}, B: ${trueB}`;
+                } else {
+                    document.getElementById('true-color-section').style.display = 'none';
+                }
+                
+                // update metrics if available
+                if (data.metrics) {
+                    document.getElementById('metrics-section').style.display = 'block';
+                    document.getElementById('r2-score').textContent = data.metrics.R2_Score.toFixed(4);
+                    document.getElementById('rmse').textContent = data.metrics.RMSE.toFixed(4);
+                    document.getElementById('mape').textContent = data.metrics.MAPE.toFixed(4);
+                    document.getElementById('mean-delta-e').textContent = data.metrics.Mean_Delta_E.toFixed(4);
+                    document.getElementById('median-delta-e').textContent = data.metrics.Median_Delta_E.toFixed(4);
+                } else {
+                    document.getElementById('metrics-section').style.display = 'none';
+                }
+            })
+            .catch(error => {
+                document.getElementById('loader').style.display = 'none';
+                alert('Error: ' + error);
+            });
+        });
+        
+        // helper function to create a color sample element
+        function createColorSample(name, colorValue) {
+            const container = document.createElement('div');
+            container.className = 'color-sample';
+            
+            const box = document.createElement('div');
+            box.className = 'sample-box';
+            box.style.backgroundColor = colorValue;
+            
+            const label = document.createElement('div');
+            label.textContent = name;
+            
+            container.appendChild(box);
+            container.appendChild(label);
+            
+            return container;
+        }
+    </script>
+</body>
+</html>
